@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MicroForge Studio — Builder Core</title>
+  <meta name="description" content="MicroForge Studio Builder Core — vedä tiedostoja tai kirjoita idea ja rakenna pelirunko suoraan selaimessa." />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=VT323&display=swap');
+
+    :root {
+      --bg-0: #050814;
+      --bg-1: #0a1020;
+      --bg-2: #10192d;
+      --bg-3: #14203b;
+
+      --panel: rgba(255,255,255,0.05);
+      --panel-2: rgba(255,255,255,0.08);
+      --panel-3: rgba(255,255,255,0.035);
+      --line: rgba(255,255,255 --text: #eef3ff;      --line: rgba(255,255,255,0.10);
+      --text-soft: #aeb8d6;
+      --text-dim: #7d89a8;
+
+      --cyan: #33d9ff;
+      --blue: #6893ff;
+      --violet: #9d6dff;
+      --pink: #ff4fd8;
+      --green: #55efb0;
+      --gold: #ffc86b;
+      --orange: #ff9166;
+
+      --shadow-main: 0 30px 90px rgba(0,0,0,0.34);
+      --shadow-soft: 0 18px 38px rgba(0,0,0,0.24);
+
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+
+      --max-w: 1380px;
+      --transition: 260ms cubic-bezier(.2,.7,.2,1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(104,147,255,0.18), transparent 22%),
+        radial-gradient(circle at 88% 10%, rgba(255,79,216,0.10), transparent 18%),
+        radial-gradient(circle at 46% 22%, rgba(51,217,255,0.08), transparent 18%),
+        linear-gradient(180deg, #0a1020 0%, #09101b 24%, #060b14 58%, #04070f 100%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .container {
+      width: min(var(--max-w), calc(100% - 32px));
+      margin-inline: auto;
+    }
+
+    .mono {
+      font-family: "VT323", monospace;
+      letter-spacing: 0.06em;
+    }
+
+    .grid-noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.06;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 82%);
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(28px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .orb.a {
+      width: 220px;
+      height: 220px;
+      background: rgba(51,217,255,0.40);
+      top: 90px;
+      left: -60px;
+    }
+
+    .orb.b {
+      width: 280px;
+      height: 280px;
+      background: rgba(255,79,216,0.18);
+      top: 0;
+      right: -90px;
+    }
+
+    .orb.c {
+      width: 180px;
+      height: 180px;
+      background: rgba(157,109,255,0.18);
+      bottom: 120px;
+      right: 14%;
+    }
+
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px) saturate(1.15);
+      background: linear-gradient(to bottom, rgba(8,12,22,0.84), rgba(8,12,22,0.58));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .topbar-inner {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand-mini {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-mini-top {
+      font-size: 0.74rem;
+      color: rgba(255,255,255,0.48);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .brand-mini-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-mini-main span {
+      color: var(--cyan);
+    }
+
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      box-shadow: 0 0 18px rgba(51,217,255,0.35);
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .top-link {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.60);
+      transition: color var(--transition), transform var(--transition);
+    }
+
+    .top-link:hover {
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      overflow: clip;
+      padding: 48px 0 26px;
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.03fr 0.97fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-left,
+    .hero-right,
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow-main);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-left {
+      min-height: 520px;
+      padding: 28px 32px 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-right {
+      min-height: 520px;
+      padding: 22px;
+    }
+
+    .hero-system {
+      color: rgba(255,255,255,0.56);
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .hero-brand {
+      width: 100%;
+      overflow: visible;
+    }
+
+    .hero-logo {
+      margin: 0;
+      font-size: clamp(2.9rem, 6vw, 6.2rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+      background: linear-gradient(90deg, #f4f8ff 0%, #96abff 40%, #4bdfff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 42px rgba(104,147,255,0.15);
+    }
+
+    .hero-logo-sub {
+      margin-top: 10px;
+      font-size: clamp(1rem, 1.42vw, 1.22rem);
+      font-weight: 800;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.74);
+    }
+
+    .hero-subline {
+      margin-top: 18px;
+      color: rgba(255,255,255,0.50);
+      font-size: 0.84rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .hero-divider {
+      width: 170px;
+      height: 2px;
+      margin: 18px 0 16px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      border-radius: 999px;
+      box-shadow: 0 0 18px rgba(104,147,255,0.30);
+    }
+
+    .hero-pulse {
+      color: var(--cyan);
+      font-size: 1rem;
+      opacity: 0.84;
+      margin-bottom: 18px;
+    }
+
+    .hero-blurb {
+      max-width: 56ch;
+      color: var(--text-soft);
+      line-height: 1.75;
+      font-size: 0.98rem;
+      margin-bottom: 20px;
+    }
+
+    .hero-points {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .point {
+      border-radius: 18px;
+      padding: 16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .point-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.50);
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .point strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .point span {
+      display: block;
+      color: var(--text-soft);
+      line-height: 1.56;
+      font-size: 0.92rem;
+    }
+
+    /* Builder flow */
+    .flow {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .flow-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .flow-title {
+      font-size: 0.8rem;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.56);
+      font-weight: 800;
+    }
+
+    .flow-status {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .step {
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+      min-height: 88px;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+    }
+
+    .step small {
+      display: block;
+      color: rgba(255,255,255,0.44);
+      font-size: 0.70rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 0.98rem;
+      letter-spacing: -0.02em;
+    }
+
+    .step.active {
+      border-color: rgba(51,217,255,0.38);
+      box-shadow: 0 0 0 1px rgba(51,217,255,0.08) inset, 0 0 24px rgba(51,217,255,0.07);
+      transform: translateY(-1px);
+    }
+
+    /* Processing */
+    .processing {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .processing.hidden {
+      display: none;
+    }
+
+    .processing-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: rgba(255,255,255,0.62);
+      font-size: 0.82rem;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .processing-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .processing-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--cyan), var(--pink));
+      box-shadow: 0 0 22px rgba(51,217,255,0.25);
+      transition: width 280ms ease;
+    }
+
+    /* Builder box */
+    .builder-box {
+      display: grid;
+      gap: 16px;
+    }
+
+    .drop-zone {
+      position: relative;
+      border-radius: 24px;
+      min-height: 260px;
+      padding: 24px;
+      border: 2px dashed rgba(255,255,255,0.16);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(104,147,255,0.08), transparent 20%),
+        radial-gradient(circle at 80% 20%, rgba(255,79,216,0.06), transparent 18%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .drop-zone:hover {
+      transform: translateY(-2px);
+    }
+
+    .drop-zone.dragover {
+      border-color: rgba(51,217,255,0.52);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(104,147,255,0.16), transparent 20%),
+        radial-gradient(circle at 80% 20%, rgba(255,79,216,0.10), transparent 18%),
+        linear-gradient(180deg, rgba(30,53,105,0.18), rgba(255,255,255,0.03));
+      box-shadow: 0 0 0 1px rgba(51,217,255,0.12) inset, 0 0 30px rgba(51,217,255,0.08);
+    }
+
+    .drop-zone input {
+      display: none;
+    }
+
+    .drop-center {
+      max-width: 46ch;
+      position: relative;
+      z-index: 2;
+    }
+
+    .drop-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 24px;
+      margin: 0 auto 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(104,147,255,0.22), rgba(51,217,255,0.16));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+      font-size: 1.8rem;
+    }
+
+    .drop-title {
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .drop-sub {
+      color: var(--text-soft);
+      line-height: 1.7;
+      font-size: 0.96rem;
+    }
+
+    .drop-hint {
+      margin-top: 14px;
+      color: rgba(255,255,255,0.46);
+      font-size: 0.80rem;
+      letter-spacing: 0.05em;
+    }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .prompt-chip {
+      border-radius: 999px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.76);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      transition: transform var(--transition), border-color var(--transition), background var(--transition);
+    }
+
+    .prompt-chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(51,217,255,0.30);
+      background: rgba(51,217,255,0.06);
+    }
+
+    .manual-wrap {
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    }
+
+    .manual-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .manual-head strong {
+      font-size: 0.96rem;
+      letter-spacing: -0.02em;
+    }
+
+    .manual-head span {
+      color: rgba(255,255,255,0.48);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-weight: 800;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(4,8,16,0.42);
+      color: #f3f7ff;
+      padding: 16px;
+      outline: none;
+      line-height: 1.65;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    textarea::placeholder {
+      color: rgba(255,255,255,0.34);
+    }
+
+    .builder-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition), opacity var(--transition);
+      user-select: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.65;
+      cursor: progress;
+      transform: none;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(255,79,216,0.88), rgba(104,147,255,0.94));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow:
+        0 18px 30px rgba(59,35,106,0.28),
+        inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+
+    .btn-secondary {
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow:
+        0 14px 24px rgba(0,0,0,0.16),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .btn-ghost {
+      color: var(--text-soft);
+      background: transparent;
+      border: 1px dashed rgba(255,255,255,0.14);
+    }
+
+    .file-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .file-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .file-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(104,147,255,0.18), rgba(51,217,255,0.14));
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .file-meta strong {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .file-meta span {
+      color: var(--text-dim);
+      font-size: 0.84rem;
+    }
+
+    .file-state {
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    /* Workspace */
+    .workspace {
+      padding: 14px 0 34px;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    }
+
+    .panel-head-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .panel-head-title small {
+      color: rgba(255,255,255,0.48);
+      font-size: 0.74rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .panel-head-title strong {
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.70);
+      font-weight: 800;
+    }
+
+    .panel-body {
+      padding: 20px;
+    }
+
+    .engine-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .engine-card {
+      position: relative;
+      border-radius: 22px;
+      min-height: 220px;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .engine-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: var(--frame);
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.98;
+    }
+
+    .engine-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .engine-code {
+      color: var(--glow);
+      font-size: 1.2rem;
+      text-shadow: 0 0 14px rgba(255,255,255,0.10);
+    }
+
+    .engine-series {
+      color: rgba(255,255,255,0.44);
+      font-size: 0.70rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .engine-title {
+      margin: 0 0 10px;
+      font-size: 1.14rem;
+      letter-spacing: -0.03em;
+    }
+
+    .engine-copy {
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.68;
+      font-size: 0.92rem;
+      white-space: pre-line;
+    }
+
+    .engine-1 {
+      --glow: #ff58c8;
+      --frame: linear-gradient(135deg, rgba(255,88,200,1), rgba(146,101,255,0.92));
+    }
+
+    .engine-2 {
+      --glow: #35d9ff;
+      --frame: linear-gradient(135deg, rgba(53,217,255,1), rgba(104,147,255,0.92));
+    }
+
+    .engine-3 {
+      --glow: #67f1ca;
+      --frame: linear-gradient(135deg, rgba(103,241,202,1), rgba(53,217,255,0.88));
+    }
+
+    .engine-4 {
+      --glow: #ffc86b;
+      --frame: linear-gradient(135deg, rgba(255,200,107,1), rgba(255,145,102,0.92));
+    }
+
+    .summary-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .summary-box {
+      border-radius: 18px;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025));
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .summary-box strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.98rem;
+      letter-spacing: -0.02em;
+    }
+
+    .summary-box span,
+    .summary-box p {
+      display: block;
+      margin: 0;
+      color: var(--text-soft);
+      line-height: 1.66;
+      font-size: 0.92rem;
+      white-space: pre-line;
+    }
+
+    .output-area {
+      width: 100%;
+      min-height: 320px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(3,6,12,0.52);
+      color: #f2f7ff;
+      padding: 16px;
+      line-height: 1.65;
+      font-family: "Inter", system-ui, sans-serif;
+      white-space: pre-wrap;
+      resize: vertical;
+    }
+
+    .footer {
+      padding: 18px 0 36px;
+      color: rgba(255,255,255,0.38);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .footer-row {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1180px) {
+      .hero-grid,
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .flow-steps,
+      .hero-points,
+      .engine-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-logo {
+        font-size: clamp(2.2rem, 9vw, 4.4rem);
+        white-space: normal;
+      }
+
+      .hero-logo-sub {
+        font-size: clamp(0.92rem, 4vw, 1.08rem);
+        letter-spacing: 0.18em;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .container {
+        width: min(var(--max-w), calc(100% - 20px));
+      }
+
+      .topbar-inner {
+        min-height: 70px;
+      }
+
+      .top-links {
+        gap: 12px;
+      }
+
+      .top-link {
+        font-size: 0.70rem;
+      }
+
+      .hero-left,
+      .hero-right,
+      .panel {
+        border-radius: 24px;
+      }
+
+      .hero-left,
+      .hero-right,
+      .panel-body {
+        padding: 18px;
+      }
+
+      .hero-logo {
+        font-size: clamp(2rem, 10vw, 3.2rem);
+        letter-spacing: -0.02em;
+      }
+
+      .hero-logo-sub {
+        font-size: 0.92rem;
+        letter-spacing: 0.16em;
+      }
+
+      .hero-subline {
+        font-size: 0.72rem;
+        letter-spacing: 0.20em;
+      }
+
+      .builder-actions {
+        flex-direction: column;
+      }
+
+      .drop-zone {
+        min-height: 220px;
+        padding: 18px;
+      }
+
+      .footer-row {
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand-mini">
+        <div class="brand-mini-top mono">MF::SYSTEM_LAYER</div>
+        <div class="brand-mini-main">
+          <span class="brand-dot" aria-hidden="true"></span>
+          MICROFORGE <span>STUDIO</span>
+        </div>
+      </div>
+
+      <nav class="top-links" aria-label="Päävalikko">
+        <a class="top-link" href="#builder">Builder</a>
+        <a class="top-link" href="#result">Result</a>
+        <a class="top-link" href="#export">Export</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="builder">
+      <div class="orb a"></div>
+      <div class="orb b"></div>
+      <div class="orb c"></div>
+
+      <div class="container hero-grid">
+        <section class="hero-left" aria-labelledby="heroTitle">
+          <div class="grid-noise"></div>
+
+          <div class="hero-system mono">MF::SYS_CORE v3.0 DEPLOY READY</div>
+
+          <div class="hero-brand">
+            <h1 class="hero-logo" id="heroTitle">MICROFORGE</h1>
+            <div class="hero-logo-sub">STUDIO BUILDER</div>
+          </div>
+
+          <div class="hero-subline">GAME BUILDER • ENGINE UI • BEGINNER READY</div>
+          <div class="hero-divider"></div>
+          <div class="hero-pulse mono">[ builder core engaged ]</div>
+
+          <p class="hero-blurb">
+            Vedä ideat, dokumentit ja muistiot sisään tai kirjoita lähtökohta käsin.
+            MicroForge rakentaa sinulle heti pelin rungon: pääroolin, maailman, core loopin ja tehtävä-/tarinalinjan.
+          </p>
+
+          <div class="hero-points">
+            <div class="point">
+              <div class="point-label">Drop</div>
+              <strong>Vedä materiaalit sisään</strong>
+              <span>TXT, MD, JSON, CSV, HTML sekä PDF/DOC-tiedostot mukaan builderiin.</span>
+            </div>
+
+            <div class="point">
+              <div class="point-label">Build</div>
+              <strong>Muodosta pelirunko</strong>
+              <span>Järjestelmä hahmottaa genreä, maailmaa, tehtäviä ja pelilooppia.</span>
+            </div>
+
+            <div class="point">
+              <div class="point-label">Beginner</div>
+              <strong>Toimii myös ensikertalaiselle</strong>
+              <span>Voit kirjoittaa idean itse ilman valmista dokumenttia ja silti saada rungon.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="hero-right" aria-labelledby="builderFlowTitle">
+          <div class="flow">
+            <div class="flow-head">
+              <div class="flow-title" id="builderFlowTitle">Builder Flow</div>
+              <div class="flow-status" id="flowStatus">Ready</div>
+            </div>
+
+            <div class="flow-steps">
+              <div class="step active">
+                <small>Phase 01</small>
+                <strong>DROP</strong>
+              </div>
+              <div class="step" id="stepAnalyze">
+                <small>Phase 02</small>
+                <strong>ANALYZE</strong>
+              </div>
+              <div class="step" id="stepBuild">
+                <small>Phase 03</small>
+                <strong>BUILD</strong>
+              </div>
+              <div class="step" id="stepExport">
+                <small>Phase 04</small>
+                <strong>EXPORT</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="processing hidden" id="processing">
+            <div class="processing-line">
+              <span id="processingLabel">Reading input</span>
+              <span id="processingPercent">0%</span>
+            </div>
+            <div class="processing-bar">
+              <div class="processing-fill" id="processingFill"></div>
+            </div>
+          </div>
+
+          <div class="builder-box">
+            <label class="drop-zone" id="dropZone">
+              <input id="fileInput" type="file" multiple />
+
+              <div class="drop-center">
+                <div class="drop-icon">⬢</div>
+                <div class="drop-title">DROP FILES TO BUILD</div>
+                <div class="drop-sub">
+                  Vedä tiedosto tähän tai klikkaa avataksesi tiedostovalinnan.
+                  Voit myös ohittaa tiedostot ja kirjoittaa idean käsin.
+                </div>
+                <div class="drop-hint">
+                  Tekstipohjaiset tiedostot luetaan sisällöllisesti. PDF/DOC/DOCX otetaan mukaan tiedostoina ja nimistä tehdään rakennevihjeitä.
+                </div>
+
+                <div class="quick-prompts">
+                  <button type="button" class="prompt-chip" data-prompt="Cyberpunk-kaupunki, jossa pelaaja rakentaa pienen salakuljetusverkoston ja yrittää nousta fraktioiden väliin jäämättä.">Cyberpunk smuggling</button>
+                  <button type="button" class="prompt-chip" data-prompt="Synkkä fantasiamaailma, jossa pieni ryhmä yrittää rakentaa turvapaikan ja selvitä hirviöiden sekä niukkojen resurssien keskellä.">Dark survival fantasy</button>
+                  <button type="button" class="prompt-chip" data-prompt="Merellinen strategiapeli, jossa pelaaja hallitsee satamaa, kauppareittejä ja poliittisia suhteita rannikon kaupunkivaltioissa.">Harbor strategy</button>
+                </div>
+              </div>
+            </label>
+
+            <div class="manual-wrap">
+              <div class="manual-head">
+                <strong>Kirjoita idea tähän</strong>
+                <span>Manual Input</span>
+              </div>
+
+              <textarea id="ideaInput" placeholder="Esim. Futuristinen satamakaupunki, pelaaja johtaa pientä salakuljettajaryhmää. Tavoitteena on kasvattaa valtaa, rakentaa verkosto ja selvitä korruptoituneiden fraktioiden välissä..."></textarea>
+
+              <div class="builder-actions">
+                <button class="btn btn-primary" id="buildBtn">Rakenna pelirunko</button>
+                <button class="btn btn-secondary" id="demoBtn">Täytä demoidealla</button>
+                <button class="btn btn-ghost" id="clearBtn">Tyhjennä</button>
+              </div>
+            </div>
+
+            <div class="file-list" id="fileList"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="workspace" id="result">
+      <div class="container workspace-grid">
+        <section class="panel" aria-labelledby="engineProjectionTitle">
+          <div class="panel-head">
+            <div class="panel-head-title">
+              <small>Engine Projection</small>
+              <strong id="engineProjectionTitle">Pelin rungon ydinkortit</strong>
+            </div>
+            <div class="panel-badge">Live Build</div>
+          </div>
+
+          <div class="panel-body">
+            <div class="engine-grid">
+              <article class="engine-card engine-1">
+                <div class="engine-top">
+                  <div class="engine-code mono">#01</div>
+                  <div class="engine-series">Character Engine</div>
+                </div>
+                <h3 class="engine-title">Pelaaja / päärooli</h3>
+                <p class="engine-copy" id="cardCharacter">Odottamassa rakennusta...</p>
+              </article>
+
+              <article class="engine-card engine-2">
+                <div class="engine-top">
+                  <div class="engine-code mono">#11</div>
+                  <div class="engine-series">World Engine</div>
+                </div>
+                <h3 class="engine-title">Maailma / ympäristö</h3>
+                <p class="engine-copy" id="cardWorld">Odottamassa rakennusta...</p>
+              </article>
+
+              <article class="engine-card engine-3">
+                <div class="engine-top">
+                  <div class="engine-code mono">#21</div>
+                  <div class="engine-series">Loop Engine</div>
+                </div>
+                <h3 class="engine-title">Core gameplay loop</h3>
+                <p class="engine-copy" id="cardLoop">Odottamassa rakennusta...</p>
+              </article>
+
+              <article class="engine-card engine-4">
+                <div class="engine-top">
+                  <div class="engine-code mono">#31</div>
+                  <div class="engine-series">Quest / Story</div>
+                </div>
+                <h3 class="engine-title">Tehtävät / tarina</h3>
+                <p class="engine-copy" id="cardQuest">Odottamassa rakennusta...</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="summaryTitlePanel">
+          <div class="panel-head">
+            <div class="panel-head-title">
+              <small>Build Summary</small>
+              <strong id="summaryTitlePanel">Yhteenveto ja export</strong>
+            </div>
+            <div class="panel-badge">TXT Ready</div>
+          </div>
+
+          <div class="panel-body">
+            <div class="summary-stack">
+              <div class="summary-box">
+                <strong>Projektin nimi</strong>
+                <span id="summaryTitle">Ei vielä muodostettu</span>
+              </div>
+
+              <div class="summary-box">
+                <strong>Genre / muoto</strong>
+                <span id="summaryGenre">Ei vielä muodostettu</span>
+              </div>
+
+              <div class="summary-box">
+                <strong>Build source</strong>
+                <span id="summarySource">Ei lähdettä vielä</span>
+              </div>
+
+              <div class="summary-box">
+                <strong>Pitch</strong>
+                <p id="summaryPitch">Pelipitch ilmestyy tähän rakentamisen jälkeen.</p>
+              </div>
+
+              <div class="summary-box" id="export">
+                <strong>Export draft</strong>
+                <textarea class="output-area" id="exportOutput" readonly>Ei vielä exportoitavaa sisältöä.</textarea>
+
+                <div class="builder-actions" style="margin-top: 14px;">
+                  <button class="btn btn-primary" id="copyBtn">Kopioi export-teksti</button>
+                  <button class="btn btn-secondary" id="downloadBtn">Lataa TXT</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-row">
+      <div>MicroForge Studio</div>
+      <div>Drop → Analyze → Build → Export</div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const fileList = document.getElementById("fileList");
+      const ideaInput = document.getElementById("ideaInput");
+      const buildBtn = document.getElementById("buildBtn");
+      const demoBtn = document.getElementById("demoBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      const flowStatus = document.getElementById("flowStatus");
+      const stepAnalyze = document.getElementById("stepAnalyze");
+      const stepBuild = document.getElementById("stepBuild");
+      const stepExport = document.getElementById("stepExport");
+
+      const processing = document.getElementById("processing");
+      const processingFill = document.getElementById("processingFill");
+      const processingPercent = document.getElementById("processingPercent");
+      const processingLabel = document.getElementById("processingLabel");
+
+      const cardCharacter = document.getElementById("cardCharacter");
+      const cardWorld = document.getElementById("cardWorld");
+      const cardLoop = document.getElementById("cardLoop");
+      const cardQuest = document.getElementById("cardQuest");
+
+      const summaryTitle = document.getElementById("summaryTitle");
+      const summaryGenre = document.getElementById("summaryGenre");
+      const summarySource = document.getElementById("summarySource");
+      const summaryPitch = document.getElementById("summaryPitch");
+      const exportOutput = document.getElementById("exportOutput");
+
+      let loadedFiles = [];
+      let textSources = [];
+
+      const textExtensions = ["txt", "md", "json", "csv", "html", "htm"];
+      const knownButUnparsed = ["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx"];
+
+      const defaultState = {
+        title: "Ei vielä muodostettu",
+        genre: "Ei vielä muodostettu",
+        source: "Ei lähdettä vielä",
+        pitch: "Pelipitch ilmestyy tähän rakentamisen jälkeen.",
+        character: "Odottamassa rakennusta...",
+        world: "Odottamassa rakennusta...",
+        loop: "Odottamassa rakennusta...",
+        quest: "Odottamassa rakennusta...",
+        exportText: "Ei vielä exportoitavaa sisältöä."
+      };
+
+      function resetOutput() {
+        summaryTitle.textContent = defaultState.title;
+        summaryGenre.textContent = defaultState.genre;
+        summarySource.textContent = defaultState.source;
+        summaryPitch.textContent = defaultState.pitch;
+        cardCharacter.textContent = defaultState.character;
+        cardWorld.textContent = defaultState.world;
+        cardLoop.textContent = defaultState.loop;
+        cardQuest.textContent = defaultState.quest;
+        exportOutput.value = defaultState.exportText;
+      }
+
+      function setFlow(stage) {
+        flowStatus.textContent = stage;
+        stepAnalyze.classList.toggle("active", stage === "Analyzing" || stage === "Built" || stage === "Export Ready");
+        stepBuild.classList.toggle("active", stage === "Built" || stage === "Export Ready");
+        stepExport.classList.toggle("active", stage === "Export Ready");
+      }
+
+      function formatBytes(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      }
+
+      function getExtension(name) {
+        const parts = name.toLowerCase().split(".");
+        return parts.length > 1 ? parts.pop() : "";
+      }
+
+      function escapeHTML(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function updateFileList() {
+        fileList.innerHTML = "";
+        if (!loadedFiles.length) return;
+
+        loadedFiles.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "file-item";
+
+          const badge = document.createElement("div");
+          badge.className = "file-badge";
+          badge.textContent = item.ext ? item.ext.slice(0, 3).toUpperCase() : "FILE";
+
+          const meta = document.createElement("div");
+          meta.className = "file-meta";
+          meta.innerHTML = `
+            <strong>${escapeHTML(item.name)}</strong>
+            <span>${escapeHTML(item.mode)} • ${escapeHTML(item.size)}</span>
+          `;
+
+          const state = document.createElement("div");
+          state.className = "file-state";
+          state.textContent = "Loaded";
+
+          row.appendChild(badge);
+          row.appendChild(meta);
+          row.appendChild(state);
+          fileList.appendChild(row);
+        });
+      }
+
+      async function handleFiles(files) {
+        if (!files || !files.length) return;
+
+        setFlow("Analyzing");
+
+        for (const file of files) {
+          const ext = getExtension(file.name);
+          let mode = "Metadata only";
+          let extractedText = "";
+
+          if (textExtensions.includes(ext)) {
+            mode = "Text parsed";
+            try {
+              extractedText = await file.text();
+              textSources.push(extractedText);
+            } catch (err) {
+              mode = "Read failed";
+            }
+          } else if (knownButUnparsed.includes(ext)) {
+            mode = "File accepted";
+          } else {
+            mode = "File accepted";
+          }
+
+          loadedFiles.push({
+            name: file.name,
+            ext,
+            size: formatBytes(file.size),
+            mode,
+            extractedText
+          });
+        }
+
+        updateFileList();
+        setFlow("Ready");
+      }
+
+      ["dragenter", "dragover"].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add("dragover");
+        });
+      });
+
+      ["dragleave", "drop"].forEach(evt => {
+        dropZone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove("dragover");
+        });
+      });
+
+      dropZone.addEventListener("drop", async (e) => {
+        const files = [...e.dataTransfer.files];
+        await handleFiles(files);
+      });
+
+      dropZone.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", async (e) => {
+        const files = [...e.target.files];
+        await handleFiles(files);
+      });
+
+      document.querySelectorAll(".prompt-chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          ideaInput.value = btn.dataset.prompt || "";
+          ideaInput.focus();
+        });
+      });
+
+      function hasAny(text, keywords) {
+        return keywords.some(word => text.includes(word));
+      }
+
+      function detectGenre(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["survival", "survive", "selviyty", "hunger", "scarcity"])) return "Survival / management";
+        if (hasAny(t, ["city", "kaupunki", "base", "rakentaa", "build", "factory"])) return "City / base building";
+        if (hasAny(t, ["crime", "gang", "smuggling", "salakuljet", "mafia"])) return "Criminal strategy / narrative";
+        if (hasAny(t, ["trade", "merchant", "economy", "market", "kauppa"])) return "Economic strategy";
+        if (hasAny(t, ["space", "planet", "galaxy", "starship", "avaruus"])) return "Sci-fi exploration";
+        if (hasAny(t, ["horror", "monster", "fear", "darkness", "kauhu"])) return "Horror / tension";
+        if (hasAny(t, ["quest", "fantasy", "kingdom", "magic", "dragon", "sword"])) return "Fantasy adventure RPG";
+        if (hasAny(t, ["sea", "ocean", "harbor", "satama", "meri", "ship", "saari"])) return "Harbor / ocean strategy adventure";
+        return "Narrative strategy adventure";
+      }
+
+      function detectWorld(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["harbor", "satama", "port", "meri", "ocean", "sea"])) {
+          return "Puoliksi laillinen satamakaupunki tai rannikon verkosto, jossa raha, valta ja reitit liikkuvat näkymättömien sopimusten kautta.";
+        }
+        if (hasAny(t, ["space", "galaxy", "planet", "starship", "orbit", "avaruus"])) {
+          return "Kerrostunut avaruusympäristö, jossa asemat, planeetat ja reitit muodostavat kylmän mutta mahdollisuuksia täynnä olevan verkoston.";
+        }
+        if (hasAny(t, ["city", "kaupunki", "district", "neon", "cyber"])) {
+          return "Ylikyllästetty neon-kaupunki, jossa eri alueet, fraktiot ja resurssivirrat määrittävät pelaajan etenemisen.";
+        }
+        if (hasAny(t, ["forest", "wilderness", "wild", "ruin", "island", "saari"])) {
+          return "Vaarallinen rajamaa, jossa luonto, rauniot ja hajonneet valtarakenteet pakottavat jatkuviin valintoihin.";
+        }
+        return "Monikerroksinen maailma, jossa resurssit, ihmiset ja konfliktit törmäävät toisiinsa ja synnyttävät jatkuvaa painetta pelaajalle.";
+      }
+
+      function detectCharacter(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["captain", "kapteeni", "leader", "johtaja"])) {
+          return "Pelaaja on verkostoa rakentava johtaja, joka tasapainottelee riskin, uskollisuuden ja kasvun välillä.";
+        }
+        if (hasAny(t, ["smuggler", "salakuljet", "criminal", "gang", "mafia"])) {
+          return "Pelaaja on pienestä asemasta nouseva riskinottaja, jonka vahvuus on sopeutuminen ja heikkous ylikunnianhimo.";
+        }
+        if (hasAny(t, ["merchant", "trader", "kauppias"])) {
+          return "Pelaaja on opportunistinen reittien rakentaja, joka tekee voittoa mutta joutuu jatkuvasti moraalisten kompromissien eteen.";
+        }
+        if (hasAny(t, ["explorer", "scout", "researcher", "tutkija"])) {
+          return "Pelaaja on tiedon, reittien ja löytöjen varassa etenevä arkkitehti, joka näkee mahdollisuuksia siellä missä muut näkevät kaaosta.";
+        }
+        return "Pelaaja on kasvava toimija, joka alkaa rajallisista resursseista mutta pyrkii rakentamaan vaikutusvaltaa, järjestelmää ja omaa asemaansa.";
+      }
+
+      function detectLoop(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["trade", "market", "resource", "economy", "kauppa"])) {
+          return "Hanki resursseja → valitse riskitaso → tee kauppoja tai siirtoja → päivitä verkostoa → avaa uusia mahdollisuuksia.";
+        }
+        if (hasAny(t, ["survival", "selviyty", "base", "build", "craft"])) {
+          return "Kerää → rakenna → suojaa → laajenna → selviydy kovemmista paineista.";
+        }
+        if (hasAny(t, ["crime", "gang", "smuggling", "salakuljet"])) {
+          return "Suunnittele keikka → hanki tavara tai tieto → vältä paine ja kilpailijat → kasvata vaikutusvaltaa → avaa suuremmat operaatiot.";
+        }
+        if (hasAny(t, ["quest", "story", "dialogue", "faction"])) {
+          return "Valitse tavoite → neuvottele tai toimi → kohtaa seuraus → muuta suhdeverkkoa → avaa uusi haara.";
+        }
+        return "Tutki → tee päätös → kerää hyöty → siedä seuraukset → laajenna toimintaa seuraavaan vaiheeseen.";
+      }
+
+      function detectQuest(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["faction", "fraktio", "politics", "corrupt", "corruption", "valta"])) {
+          return "Tehtävät rakentuvat fraktioiden välille: lupausten rikkominen, liittoutuminen ja kaksoispelaaminen muokkaavat koko tarinalinjaa.";
+        }
+        if (hasAny(t, ["harbor", "satama", "ship", "meri", "ocean"])) {
+          return "Tarina pyörii reiteissä, lastissa, sataman hallinnassa ja siinä, kuka lopulta kontrolloi liikennettä ja luottamusta.";
+        }
+        if (hasAny(t, ["survival", "dark", "horror", "monster"])) {
+          return "Tehtävät pakottavat etenemään resurssipulan, paineen ja uhkan läpi, jolloin jokaisella valinnalla on tunnepainoa.";
+        }
+        return "Tarina rakentuu kasvusta, ristiriidoista ja siitä, miten pelaajan ratkaisut muuttavat ympäröivää järjestelmää.";
+      }
+
+      function guessTitle(text) {
+        const t = text.toLowerCase();
+
+        if (hasAny(t, ["harbor", "satama", "port"])) return "MicroForge: Harbor Drift";
+        if (hasAny(t, ["space", "galaxy", "planet"])) return "MicroForge: Cold Orbit";
+        if (hasAny(t, ["crime", "gang", "smuggling"])) return "MicroForge: Shadow Route";
+        if (hasAny(t, ["survival", "base", "factory"])) return "MicroForge: Last Structure";
+        if (hasAny(t, ["forest", "island", "ruin"])) return "MicroForge: Wild Circuit";
+        return "MicroForge: System Rise";
+      }
+
+      function createPitch(title, genre, character, world, loop, quest) {
+        return `${title} on ${genre.toLowerCase()}, jossa ${character.toLowerCase()} Maailma rakentuu näin: ${world.toLowerCase()} Pelaamisen ydin etenee näin: ${loop.toLowerCase()} Tarinallinen veto syntyy siitä, että ${quest.toLowerCase()}`;
+      }
+
+      async function runProcessingAnimation() {
+        processing.classList.remove("hidden");
+        buildBtn.disabled = true;
+        flowStatus.textContent = "Analyzing";
+        setFlow("Analyzing");
+
+        const stages = [
+          { pct: 18, label: "Reading input" },
+          { pct: 42, label: "Extracting systems" },
+          { pct: 68, label: "Generating loop" },
+          { pct: 86, label: "Structuring world" },
+          { pct: 100, label: "Finalizing build" }
+        ];
+
+        for (const stage of stages) {
+          processingLabel.textContent = stage.label;
+          processingPercent.textContent = stage.pct + "%";
+          processingFill.style.width = stage.pct + "%";
+          await new Promise(resolve => setTimeout(resolve, 280));
+        }
+
+        buildBtn.disabled = false;
+      }
+
+      function buildGameFromInput() {
+        const manualText = ideaInput.value.trim();
+        const fileNames = loadedFiles.map(file => file.name).join(" ");
+        const fileText = textSources.join("\n\n");
+        const combined = [manualText, fileNames, fileText].filter(Boolean).join("\n\n");
+
+        if (!combined.trim()) {
+          alert("Lisää ensin idea tekstiin tai vedä tiedostoja builderiin.");
+          return;
+        }
+
+        return combined;
+      }
+
+      async function buildNow() {
+        const combined = buildGameFromInput();
+        if (!combined) return;
+
+        await runProcessingAnimation();
+
+        const genre = detectGenre(combined);
+        const world = detectWorld(combined);
+        const character = detectCharacter(combined);
+        const loop = detectLoop(combined);
+        const quest = detectQuest(combined);
+        const title = guessTitle(combined);
+
+        const sourceBits = [];
+        if (ideaInput.value.trim()) sourceBits.push("Manuaalinen idea");
+        if (loadedFiles.length) sourceBits.push(`${loadedFiles.length} tiedostoa builderissä`);
+
+        const pitch = createPitch(title, genre, character, world, loop, quest);
+
+        setFlow("Built");
+
+        summaryTitle.textContent = title;
+        summaryGenre.textContent = genre;
+        summarySource.textContent = sourceBits.length ? sourceBits.join(" + ") : "Ainoastaan järjestelmän oletusrakenne";
+        summaryPitch.textContent = pitch;
+
+        cardCharacter.textContent = character;
+        cardWorld.textContent = world;
+        cardLoop.textContent = loop;
+        cardQuest.textContent = quest;
+
+        const exportText = [
+          `MICROFORGE STUDIO // BUILD EXPORT`,
+          `--------------------------------`,
+          ``,
+          `Projektin nimi: ${title}`,
+          `Genre: ${genre}`,
+          `Lähde: ${summarySource.textContent}`,
+          ``,
+          `PITCH`,
+          `${pitch}`,
+          ``,
+          `CHARACTER ENGINE`,
+          `${character}`,
+          ``,
+          `WORLD ENGINE`,
+          `${world}`,
+          ``,
+          `LOOP ENGINE`,
+          `${loop}`,
+          ``,
+          `QUEST / STORY ENGINE`,
+          `${quest}`,
+          ``,
+          `FILES`,
+          `${loadedFiles.length ? loadedFiles.map(file => `- ${file.name} (${file.mode})`).join("\n") : "- Ei tiedostoja"}`,
+          ``,
+          `NEXT STEP`,
+          `- tarkenna päämekaniikka`,
+          `- määritä vihollisvoimat tai vastapaine`,
+          `- suunnittele 3 ensimmäistä tehtävää`,
+          `- rajaa ensimmäinen julkaistava scope`
+        ].join("\n");
+
+        exportOutput.value = exportText;
+        setFlow("Export Ready");
+
+        requestAnimationFrame(() => {
+          document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+
+      buildBtn.addEventListener("click", buildNow);
+
+      demoBtn.addEventListener("click", () => {
+        ideaInput.value = "Futuristinen satamakaupunki, jossa pelaaja johtaa pientä salakuljettajaryhmää. Tarkoitus on kasvattaa verkostoa, tehdä riskialttiita kuljetuksia, hallita suhteita fraktioihin ja nousta pienestä toimijasta koko rannikon vaikutusvaltaiseksi nimeksi.";
+        ideaInput.focus();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        loadedFiles = [];
+        textSources = [];
+        fileList.innerHTML = "";
+        ideaInput.value = "";
+        resetOutput();
+        setFlow("Ready");
+        fileInput.value = "";
+        processing.classList.add("hidden");
+        processingFill.style.width = "0%";
+        processingPercent.textContent = "0%";
+        processingLabel.textContent = "Reading input";
+      });
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(exportOutput.value);
+          const original = copyBtn.textContent;
+          copyBtn.textContent = "Kopioitu";
+          setTimeout(() => {
+            copyBtn.textContent = original;
+          }, 1600);
+        } catch (err) {
+          alert("Kopiointi ei onnistunut tässä selaimessa.");
+        }
+      });
+
+      downloadBtn.addEventListener("click", () => {
+        const blob = new Blob([exportOutput.value], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "microforge-build-export.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      resetOutput();
+      setFlow("Ready");
+    })();
+  </script>
+</body>
+</html>
+
